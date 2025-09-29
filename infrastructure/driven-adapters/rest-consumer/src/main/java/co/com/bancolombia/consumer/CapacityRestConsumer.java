@@ -2,6 +2,7 @@ package co.com.bancolombia.consumer;
 
 import co.com.bancolombia.model.bootcamp.Capacity;
 import co.com.bancolombia.model.bootcamp.CapacityBootcamp;
+import co.com.bancolombia.model.bootcamp.Technology;
 import co.com.bancolombia.model.bootcamp.gateway.CapacityGateway;
 import co.com.bancolombia.model.bootcamp.values.Id;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
@@ -34,7 +35,10 @@ public class CapacityRestConsumer implements CapacityGateway {
       .onStatus(HttpStatusCode::is4xxClientError, this::map4xx)
       .onStatus(HttpStatusCode::is5xxServerError, this::map5xx)
       .bodyToMono(CapacityResponse.class)
-      .map(resp -> new Capacity(resp.getCapacityId(), resp.getName(), resp.getDescription()));
+      .map(resp -> new Capacity(
+        resp.getCapacityId(),
+        resp.getName(),
+        resp.getDescription()));
   }
 
   @CircuitBreaker(name = "findByBootcampId")
@@ -47,7 +51,11 @@ public class CapacityRestConsumer implements CapacityGateway {
       .onStatus(HttpStatusCode::is4xxClientError, this::map4xx)
       .onStatus(HttpStatusCode::is5xxServerError, this::map5xx)
       .bodyToFlux(CapacityResponse.class)
-      .map(resp -> new Capacity(resp.getCapacityId(), resp.getName(), resp.getDescription()));
+      .map(resp -> new Capacity(
+        resp.getCapacityId(),
+        resp.getName(),
+        resp.getDescription(),
+        resp.getTechnologies().stream().map(t-> new Technology(t.getTechnologyId(), t.getName(), t.getDescription())).toList()));
   }
 
   @CircuitBreaker(name = "findAllCapacities")
