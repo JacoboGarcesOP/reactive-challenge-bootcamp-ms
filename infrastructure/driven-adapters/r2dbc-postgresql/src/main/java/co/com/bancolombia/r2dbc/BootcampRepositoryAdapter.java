@@ -53,6 +53,11 @@ public class BootcampRepositoryAdapter implements BootcampGateway {
     return source.map(this::toDomain);
   }
 
+  @Override
+  public Flux<Bootcamp> findAll() {
+    return bootcampRepository.findAll().map(bootcampEntity -> new Bootcamp(bootcampEntity.getId(), bootcampEntity.getName(), bootcampEntity.getDescription(), bootcampEntity.getLaunchDate(), bootcampEntity.getDuration()));
+  }
+
   private Bootcamp toDomain(BootcampEntity entity) {
     return new Bootcamp(
       entity.getId(),

@@ -2,6 +2,7 @@ package co.com.bancolombia.api;
 
 import co.com.bancolombia.api.request.CreateBootcampRequest;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -15,6 +16,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
+import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
@@ -104,5 +106,121 @@ public class RouterRest {
   )
   public RouterFunction<ServerResponse> createBootcampRoute(Handler handler) {
     return route(POST(BASE_URL + "/bootcamp"), handler::createBootcamp);
+  }
+
+  @Bean
+  @RouterOperation(
+    path = "/v1/api/bootcamp",
+    produces = {MediaType.APPLICATION_JSON_VALUE},
+    method = RequestMethod.GET,
+    beanClass = Handler.class,
+    beanMethod = "getAllBootcamps",
+    operation = @Operation(
+      operationId = "getAllBootcamps",
+      summary = "Obtener bootcamps paginados y ordenados",
+      description = "Retorna bootcamps con sus capacidades y tecnologías asociadas, soportando paginación y ordenamiento. " +
+        "Maneja errores de dominio, negocio e internos.",
+      tags = {"Bootcamp Management"},
+      parameters = {
+        @Parameter(name = "page", description = "Número de página (base 0)", example = "0", schema = @Schema(type = "integer", defaultValue = "0")),
+        @Parameter(name = "size", description = "Tamaño de página", example = "10", schema = @Schema(type = "integer", defaultValue = "10")),
+        @Parameter(name = "sortBy", description = "Campo por el cual ordenar", example = "name", schema = @Schema(type = "string", allowableValues = {"name", "capacities"}, defaultValue = "name")),
+        @Parameter(name = "order", description = "Dirección del ordenamiento", example = "asc", schema = @Schema(type = "string", allowableValues = {"asc", "desc"}, defaultValue = "asc"))
+      },
+      responses = {
+        @ApiResponse(responseCode = "200", description = "Bootcamps obtenidos exitosamente",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Success Response",
+              summary = "Lista de bootcamps paginados y ordenados",
+              value = "{\n" +
+                "  \"bootcamps\": [\n" +
+                "    {\n" +
+                "      \"bootcampId\": 1,\n" +
+                "      \"name\": \"Bootcamp Java\",\n" +
+                "      \"description\": \"Formación intensiva en Java\",\n" +
+                "      \"launchDate\": \"2030-01-10\",\n" +
+                "      \"duration\": 60,\n" +
+                "      \"capacities\": [\n" +
+                "        {\n" +
+                "          \"capacityId\": 1,\n" +
+                "          \"name\": \"Payments Squad\",\n" +
+                "          \"description\": \"Handles all payment features\",\n" +
+                "          \"technologies\": [\n" +
+                "            { \"technologyId\": 10, \"name\": \"Java\", \"description\": \"Java 21 LTS\" },\n" +
+                "            { \"technologyId\": 11, \"name\": \"Spring Boot\", \"description\": \"Spring Boot Framework\" }\n" +
+                "          ]\n" +
+                "        },\n" +
+                "        {\n" +
+                "          \"capacityId\": 2,\n" +
+                "          \"name\": \"User Management\",\n" +
+                "          \"description\": \"Handles user operations\",\n" +
+                "          \"technologies\": [\n" +
+                "            { \"technologyId\": 12, \"name\": \"React\", \"description\": \"React Framework\" }\n" +
+                "          ]\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    },\n" +
+                "    {\n" +
+                "      \"bootcampId\": 2,\n" +
+                "      \"name\": \"Bootcamp Python\",\n" +
+                "      \"description\": \"Formación intensiva en Python\",\n" +
+                "      \"launchDate\": \"2030-02-15\",\n" +
+                "      \"duration\": 45,\n" +
+                "      \"capacities\": [\n" +
+                "        {\n" +
+                "          \"capacityId\": 3,\n" +
+                "          \"name\": \"Data Analytics\",\n" +
+                "          \"description\": \"Data analysis and visualization\",\n" +
+                "          \"technologies\": [\n" +
+                "            { \"technologyId\": 13, \"name\": \"Python\", \"description\": \"Python Programming Language\" },\n" +
+                "            { \"technologyId\": 14, \"name\": \"Pandas\", \"description\": \"Data Analysis Library\" }\n" +
+                "          ]\n" +
+                "        }\n" +
+                "      ]\n" +
+                "    }\n" +
+                "  ],\n" +
+                "  \"filter\": {\n" +
+                "    \"page\": 0,\n" +
+                "    \"size\": 10,\n" +
+                "    \"sortBy\": \"name\",\n" +
+                "    \"order\": \"asc\"\n" +
+                "  }\n" +
+                "}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "400", description = "Error de dominio o negocio",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Business Error",
+              summary = "Error de negocio",
+              value = "{\n" +
+                "  \"error\": \"BUSINESS_ERROR\",\n" +
+                "  \"message\": \"No bootcamps found\"\n" +
+                "}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "500", description = "Error interno del servidor",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Internal Error",
+              summary = "Error interno",
+              value = "{\n" +
+                "  \"error\": \"INTERNAL_ERROR\",\n" +
+                "  \"message\": \"An unexpected error occurred\"\n" +
+                "}"
+            )
+          )
+        )
+      }
+    )
+  )
+  public RouterFunction<ServerResponse> getAllBootcampsRoute(Handler handler) {
+    return route(GET(BASE_URL + "/bootcamp"), handler::getAllBootcamps);
   }
 }
