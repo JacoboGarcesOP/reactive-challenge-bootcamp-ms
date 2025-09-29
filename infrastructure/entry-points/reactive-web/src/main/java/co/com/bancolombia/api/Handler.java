@@ -4,6 +4,7 @@ import co.com.bancolombia.api.request.CreateBootcampRequest;
 import co.com.bancolombia.api.response.ErrorResponse;
 import co.com.bancolombia.model.bootcamp.exception.DomainException;
 import co.com.bancolombia.usecase.CreateBootcampUseCase;
+import co.com.bancolombia.usecase.GetPaginatedBootcampsUseCase;
 import co.com.bancolombia.usecase.command.CreateBootcampCommand;
 import co.com.bancolombia.usecase.exception.BussinessException;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ public class Handler {
   private static final String GENERIC_ERROR_MESSAGE = "An unexpected error occurred";
 
   private final CreateBootcampUseCase createBootcampUseCase;
+  private final GetPaginatedBootcampsUseCase getPaginatedBootcampsUseCase;
   private final Validator validator;
 
   public Mono<ServerResponse> createBootcamp(ServerRequest serverRequest) {
@@ -45,6 +47,20 @@ public class Handler {
       .onErrorResume(BussinessException.class, this::handleBusinessException)
       .onErrorResume(Exception.class, this::handleGenericException)
       .doOnError(error -> log.error(GENERIC_ERROR_MESSAGE, error));
+  }
+
+  public Mono<ServerResponse> getAllBootcamps(ServerRequest serverRequest) {
+    int page = serverRequest.queryParam("page").map(Integer::parseInt).orElse(0);
+    int size = serverRequest.queryParam("size").map(Integer::parseInt).orElse(10);
+    String sortBy = serverRequest.queryParam("sortBy").orElse("name");
+    String order = serverRequest.queryParam("order").orElse("asc");
+
+    return getPaginatedBootcampsUseCase.execute(page, size, sortBy, order)
+      .flatMap(this::buildSuccessResponse)
+      .onErrorResume(DomainException.class, this::handleDomainException)
+      .onErrorResume(BussinessException.class, this::handleBusinessException)
+      .onErrorResume(Exception.class, this::handleGenericException)
+      .doOnError(error -> log.error("Error retrieving bootcamps", error));
   }
 
   private void validateCreateBootcampRequest(CreateBootcampRequest request) {

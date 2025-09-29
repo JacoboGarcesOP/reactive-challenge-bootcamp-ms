@@ -5,6 +5,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -13,6 +15,7 @@ public class CapacityResponse {
   private Long capacityId;
   private String name;
   private String description;
+  private List<TechnologyResponse> technologies;
 }
 
 
