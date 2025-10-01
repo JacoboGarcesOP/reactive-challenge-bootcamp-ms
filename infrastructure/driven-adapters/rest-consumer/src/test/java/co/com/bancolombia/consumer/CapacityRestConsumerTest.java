@@ -64,6 +64,25 @@ class CapacityRestConsumerTest {
       .expectError()
       .verify();
   }
+
+  @Test
+  void deleteByBootcampId_ok() {
+    String body = "[1,2,3]";
+    server.enqueue(new MockResponse().setResponseCode(200).setBody(body).addHeader("Content-Type", "application/json"));
+    StepVerifier.create(consumer.deleteByBootcampId(10L))
+      .expectNextMatches(id -> id.getValue().equals(1L))
+      .expectNextMatches(id -> id.getValue().equals(2L))
+      .expectNextMatches(id -> id.getValue().equals(3L))
+      .verifyComplete();
+  }
+
+  @Test
+  void deleteByBootcampId_4xx_error() {
+    server.enqueue(new MockResponse().setResponseCode(404).setBody("not found"));
+    StepVerifier.create(consumer.deleteByBootcampId(10L))
+      .expectError()
+      .verify();
+  }
 }
 
 

@@ -55,7 +55,11 @@ public class CapacityRestConsumer implements CapacityGateway {
         resp.getCapacityId(),
         resp.getName(),
         resp.getDescription(),
-        resp.getTechnologies().stream().map(t-> new Technology(t.getTechnologyId(), t.getName(), t.getDescription())).toList()));
+        java.util.Optional.ofNullable(resp.getTechnologies())
+          .orElseGet(java.util.Collections::emptyList)
+          .stream()
+          .map(t -> new Technology(t.getTechnologyId(), t.getName(), t.getDescription()))
+          .toList()));
   }
 
   @CircuitBreaker(name = "findAllCapacities")
@@ -64,6 +68,19 @@ public class CapacityRestConsumer implements CapacityGateway {
     return client
       .get()
       .uri("/ids")
+      .retrieve()
+      .onStatus(HttpStatusCode::is4xxClientError, this::map4xx)
+      .onStatus(HttpStatusCode::is5xxServerError, this::map5xx)
+      .bodyToFlux(Long.class)
+      .map(Id::new);
+  }
+
+  @CircuitBreaker(name = "deleteCapacitiesByBootcamp")
+  @Override
+  public Flux<Id> deleteByBootcampId(Long bootcampId) {
+    return client
+      .delete()
+      .uri("/bootcamp/" + bootcampId)
       .retrieve()
       .onStatus(HttpStatusCode::is4xxClientError, this::map4xx)
       .onStatus(HttpStatusCode::is5xxServerError, this::map5xx)

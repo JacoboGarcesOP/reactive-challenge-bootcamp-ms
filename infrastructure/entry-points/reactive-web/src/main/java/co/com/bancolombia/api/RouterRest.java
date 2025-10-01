@@ -3,6 +3,7 @@ package co.com.bancolombia.api;
 import co.com.bancolombia.api.request.CreateBootcampRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -18,6 +19,7 @@ import org.springframework.web.reactive.function.server.ServerResponse;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
 import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
+import static org.springframework.web.reactive.function.server.RequestPredicates.DELETE;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
@@ -106,6 +108,81 @@ public class RouterRest {
   )
   public RouterFunction<ServerResponse> createBootcampRoute(Handler handler) {
     return route(POST(BASE_URL + "/bootcamp"), handler::createBootcamp);
+  }
+
+  @Bean
+  @RouterOperation(
+    path = "/v1/api/bootcamp/{bootcampId}",
+    produces = {MediaType.APPLICATION_JSON_VALUE},
+    method = RequestMethod.DELETE,
+    beanClass = Handler.class,
+    beanMethod = "deleteBootcamp",
+    operation = @Operation(
+      operationId = "deleteBootcamp",
+      summary = "Eliminar bootcamp por ID",
+      description = "Elimina un bootcamp local y sus capacidades asociadas en el microservicio externo.",
+      tags = {"Bootcamp Management"},
+      parameters = {
+        @Parameter(name = "bootcampId", in = ParameterIn.PATH, required = true, description = "ID del bootcamp", example = "10", schema = @Schema(type = "integer"))
+      },
+      responses = {
+        @ApiResponse(responseCode = "200", description = "Eliminación exitosa",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Success Response",
+              summary = "Bootcamp eliminado",
+              value = "{\n" +
+                "  \"bootcampId\": 10,\n" +
+                "  \"deletedCapacityIds\": [1, 2, 3]\n" +
+                "}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "400", description = "Solicitud inválida",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Validation Error",
+              summary = "Error de validación",
+              value = "{\n" +
+                "  \"error\": \"VALIDATION_ERROR\",\n" +
+                "  \"message\": \"bootcampId must be a number\"\n" +
+                "}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "404", description = "Bootcamp no encontrado",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Business Error",
+              summary = "No encontrado",
+              value = "{\n" +
+                "  \"error\": \"BUSINESS_ERROR\",\n" +
+                "  \"message\": \"bootcamp not found\"\n" +
+                "}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "500", description = "Error interno",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Internal Error",
+              summary = "Error interno",
+              value = "{\n" +
+                "  \"error\": \"INTERNAL_ERROR\",\n" +
+                "  \"message\": \"An unexpected error occurred\"\n" +
+                "}"
+            )
+          )
+        )
+      }
+    )
+  )
+  public RouterFunction<ServerResponse> deleteBootcamp(Handler handler) {
+    return route(DELETE(BASE_URL + "/bootcamp/{bootcampId}"), handler::deleteBootcamp);
   }
 
   @Bean

@@ -4,6 +4,7 @@ import co.com.bancolombia.model.bootcamp.Bootcamp;
 import co.com.bancolombia.model.bootcamp.gateway.BootcampGateway;
 import co.com.bancolombia.r2dbc.entity.BootcampEntity;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -56,6 +57,17 @@ public class BootcampRepositoryAdapter implements BootcampGateway {
   @Override
   public Flux<Bootcamp> findAll() {
     return bootcampRepository.findAll().map(bootcampEntity -> new Bootcamp(bootcampEntity.getId(), bootcampEntity.getName(), bootcampEntity.getDescription(), bootcampEntity.getLaunchDate(), bootcampEntity.getDuration()));
+  }
+
+  @Override
+  public Mono<Boolean> existsById(Long id) {
+    return bootcampRepository.existsById(id);
+  }
+
+  @Transactional
+  @Override
+  public Mono<Void> deleteById(Long id) {
+    return bootcampRepository.deleteById(id);
   }
 
   private Bootcamp toDomain(BootcampEntity entity) {
