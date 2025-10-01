@@ -9,4 +9,6 @@ public interface BootcampGateway {
   Mono<Bootcamp> save(Bootcamp bootcamp);
   Flux<Bootcamp> findAllPagedSorted(int page, int size, String sortBy, String order);
   Flux<Bootcamp> findAll();
+  Mono<Boolean> existsById(Long id);
+  Mono<Void> deleteById(Long id);
 }
