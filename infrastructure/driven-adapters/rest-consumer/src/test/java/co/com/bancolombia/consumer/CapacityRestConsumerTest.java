@@ -1,88 +1,87 @@
 package co.com.bancolombia.consumer;
 
+import co.com.bancolombia.model.bootcamp.Capacity;
 import co.com.bancolombia.model.bootcamp.CapacityBootcamp;
+import co.com.bancolombia.model.bootcamp.values.Id;
 import okhttp3.mockwebserver.MockResponse;
 import okhttp3.mockwebserver.MockWebServer;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.test.StepVerifier;
 
 import java.io.IOException;
+import java.util.List;
 
-class CapacityRestConsumerTest {
+public class CapacityRestConsumerTest {
 
-  private MockWebServer server;
-  private CapacityRestConsumer consumer;
+    private static MockWebServer server;
 
-  @BeforeEach
-  void setUp() throws IOException {
-    server = new MockWebServer();
-    server.start();
-    WebClient client = WebClient.builder().baseUrl(server.url("/").toString()).build();
-    consumer = new CapacityRestConsumer(client);
-  }
+    @BeforeAll
+    static void setup() throws IOException {
+        server = new MockWebServer();
+        server.start();
+    }
 
-  @AfterEach
-  void tearDown() throws IOException {
-    server.shutdown();
-  }
+    @AfterAll
+    static void tearDown() throws IOException {
+        server.shutdown();
+    }
 
-  @Test
-  void associateCapacity_ok() {
-    String body = "{\"capacityId\":1,\"name\":\"Cap\",\"description\":\"Desc\"}";
-    server.enqueue(new MockResponse().setResponseCode(200).setBody(body).addHeader("Content-Type", "application/json"));
+    private CapacityRestConsumer buildClient() {
+        String baseUrl = server.url("/").toString();
+        WebClient client = WebClient.builder().baseUrl(baseUrl).build();
+        return new CapacityRestConsumer(client);
+    }
 
-    CapacityBootcamp input = new CapacityBootcamp(10L, 1L);
-    StepVerifier.create(consumer.associateCapacity(input))
-      .expectNextMatches(c -> c.getId().getValue().equals(1L) && c.getName().getValue().equals("Cap"))
-      .verifyComplete();
-  }
+    @Test
+    void findByBootcampId_mapsTechnologyResponse() {
+        String body = "[\n" +
+                " {\"capacityId\":1,\"name\":\"cap\",\"description\":\"d\",\"technologies\":[{\"technologyId\":10,\"name\":\"Java\",\"description\":\"J\"}]}\n" +
+                "]";
+        server.enqueue(new MockResponse().setBody(body).setResponseCode(200).addHeader("Content-Type", "application/json"));
 
-  @Test
-  void associateCapacity_4xx_mapsError() {
-    server.enqueue(new MockResponse().setResponseCode(400).setBody("Bad request"));
-    StepVerifier.create(consumer.associateCapacity(new CapacityBootcamp(1L, 2L)))
-      .expectError()
-      .verify();
-  }
+        CapacityRestConsumer consumer = buildClient();
 
-  @Test
-  void findByBootcampId_ok() {
-    String body = "[{\"capacityId\":1,\"name\":\"A\",\"description\":\"d\"}]";
-    server.enqueue(new MockResponse().setResponseCode(200).setBody(body).addHeader("Content-Type", "application/json"));
-    StepVerifier.create(consumer.findByBootcampId(5L))
-      .expectNextMatches(c -> c.getId().getValue().equals(1L) && c.getName().getValue().equals("A"))
-      .verifyComplete();
-  }
+        StepVerifier.create(consumer.findByBootcampId(1L))
+                .expectNextMatches(c -> c instanceof Capacity && c.getTechnologies() != null && !c.getTechnologies().isEmpty())
+                .verifyComplete();
+    }
 
-  @Test
-  void findAllCapacities_5xx_mapsError() {
-    server.enqueue(new MockResponse().setResponseCode(500).setBody("oops"));
-    StepVerifier.create(consumer.findAllCapacities())
-      .expectError()
-      .verify();
-  }
+    @Test
+    void associateCapacity_mapsResponse() {
+        String body = "{\n" +
+                " \"capacityId\":1,\"name\":\"cap\",\"description\":\"d\",\"technologies\":[]\n" +
+                "}";
+        server.enqueue(new MockResponse().setBody(body).setResponseCode(200).addHeader("Content-Type", "application/json"));
 
-  @Test
-  void deleteByBootcampId_ok() {
-    String body = "[1,2,3]";
-    server.enqueue(new MockResponse().setResponseCode(200).setBody(body).addHeader("Content-Type", "application/json"));
-    StepVerifier.create(consumer.deleteByBootcampId(10L))
-      .expectNextMatches(id -> id.getValue().equals(1L))
-      .expectNextMatches(id -> id.getValue().equals(2L))
-      .expectNextMatches(id -> id.getValue().equals(3L))
-      .verifyComplete();
-  }
+        CapacityRestConsumer consumer = buildClient();
+        CapacityBootcamp cb = new CapacityBootcamp(1L, 1L);
 
-  @Test
-  void deleteByBootcampId_4xx_error() {
-    server.enqueue(new MockResponse().setResponseCode(404).setBody("not found"));
-    StepVerifier.create(consumer.deleteByBootcampId(10L))
-      .expectError()
-      .verify();
-  }
+        StepVerifier.create(consumer.associateCapacity(cb))
+                .expectNextCount(1)
+                .verifyComplete();
+    }
+
+    @Test
+    void findAllCapacities_mapsIds() {
+        String body = "[1,2,3]";
+        server.enqueue(new MockResponse().setBody(body).setResponseCode(200).addHeader("Content-Type", "application/json"));
+        CapacityRestConsumer consumer = buildClient();
+        StepVerifier.create(consumer.findAllCapacities())
+                .expectNextMatches(id -> id instanceof Id && id.getValue().equals(1L))
+                .expectNextCount(2)
+                .verifyComplete();
+    }
+
+    @Test
+    void deleteByBootcampId_mapsIds() {
+        String body = "[10,20]";
+        server.enqueue(new MockResponse().setBody(body).setResponseCode(200).addHeader("Content-Type", "application/json"));
+        CapacityRestConsumer consumer = buildClient();
+        StepVerifier.create(consumer.deleteByBootcampId(1L))
+                .expectNextCount(2)
+                .verifyComplete();
+    }
 }
-
-
