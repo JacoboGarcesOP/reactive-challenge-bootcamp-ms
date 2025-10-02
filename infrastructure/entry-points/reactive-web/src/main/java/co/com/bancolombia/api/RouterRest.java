@@ -114,6 +114,84 @@ public class RouterRest {
   @RouterOperation(
     path = "/v1/api/bootcamp/{bootcampId}",
     produces = {MediaType.APPLICATION_JSON_VALUE},
+    method = RequestMethod.GET,
+    beanClass = Handler.class,
+    beanMethod = "getBootcampById",
+      operation = @Operation(
+        operationId = "getBootcampById",
+        summary = "Obtener bootcamp por ID",
+        description = "Retorna un bootcamp específico con su información básica.",
+        tags = {"Bootcamp Management"},
+      parameters = {
+        @Parameter(name = "bootcampId", in = ParameterIn.PATH, required = true, description = "ID del bootcamp", example = "1", schema = @Schema(type = "integer"))
+      },
+      responses = {
+        @ApiResponse(responseCode = "200", description = "Bootcamp obtenido exitosamente",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Success Response",
+              summary = "Información del bootcamp",
+              value = "{\n" +
+                "  \"bootcampId\": 1,\n" +
+                "  \"name\": \"Bootcamp Java\",\n" +
+                "  \"description\": \"Formación intensiva en Java\",\n" +
+                "  \"launchDate\": \"2030-01-10\",\n" +
+                "  \"duration\": 60\n" +
+                "}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "400", description = "Solicitud inválida",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Validation Error",
+              summary = "Error de validación",
+              value = "{\n" +
+                "  \"error\": \"VALIDATION_ERROR\",\n" +
+                "  \"message\": \"bootcampId must be a number\"\n" +
+                "}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "404", description = "Bootcamp no encontrado",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Business Error",
+              summary = "No encontrado",
+              value = "{\n" +
+                "  \"error\": \"BUSINESS_ERROR\",\n" +
+                "  \"message\": \"bootcamp not found\"\n" +
+                "}"
+            )
+          )
+        ),
+        @ApiResponse(responseCode = "500", description = "Error interno",
+          content = @Content(
+            mediaType = MediaType.APPLICATION_JSON_VALUE,
+            examples = @ExampleObject(
+              name = "Internal Error",
+              summary = "Error interno",
+              value = "{\n" +
+                "  \"error\": \"INTERNAL_ERROR\",\n" +
+                "  \"message\": \"An unexpected error occurred\"\n" +
+                "}"
+            )
+          )
+        )
+      }
+    )
+  )
+  public RouterFunction<ServerResponse> getBootcampByIdRoute(Handler handler) {
+    return route(GET(BASE_URL + "/bootcamp/{bootcampId}"), handler::getBootcampById);
+  }
+
+  @Bean
+  @RouterOperation(
+    path = "/v1/api/bootcamp/{bootcampId}",
+    produces = {MediaType.APPLICATION_JSON_VALUE},
     method = RequestMethod.DELETE,
     beanClass = Handler.class,
     beanMethod = "deleteBootcamp",
