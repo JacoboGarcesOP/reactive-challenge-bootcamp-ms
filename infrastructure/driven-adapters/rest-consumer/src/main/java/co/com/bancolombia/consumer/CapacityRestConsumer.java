@@ -38,7 +38,9 @@ public class CapacityRestConsumer implements CapacityGateway {
       .map(resp -> new Capacity(
         resp.getCapacityId(),
         resp.getName(),
-        resp.getDescription()));
+        resp.getDescription(),
+        resp.getTechnologies().stream().map(t -> new Technology(t.getTechnologyId(), t.getName(), t.getDescription())).toList()
+        ));
   }
 
   @CircuitBreaker(name = "findByBootcampId")
