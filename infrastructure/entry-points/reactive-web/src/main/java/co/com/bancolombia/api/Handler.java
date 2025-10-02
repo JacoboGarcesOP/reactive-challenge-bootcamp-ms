@@ -5,6 +5,7 @@ import co.com.bancolombia.api.response.ErrorResponse;
 import co.com.bancolombia.model.bootcamp.exception.DomainException;
 import co.com.bancolombia.usecase.CreateBootcampUseCase;
 import co.com.bancolombia.usecase.GetPaginatedBootcampsUseCase;
+import co.com.bancolombia.usecase.GetBootcampByIdUseCase;
 import co.com.bancolombia.usecase.DeleteBootcampUseCase;
 import co.com.bancolombia.usecase.command.CreateBootcampCommand;
 import co.com.bancolombia.usecase.exception.BussinessException;
@@ -35,6 +36,7 @@ public class Handler {
 
   private final CreateBootcampUseCase createBootcampUseCase;
   private final GetPaginatedBootcampsUseCase getPaginatedBootcampsUseCase;
+  private final GetBootcampByIdUseCase getBootcampByIdUseCase;
   private final Validator validator;
   private final DeleteBootcampUseCase deleteBootcampUseCase;
 
@@ -63,6 +65,25 @@ public class Handler {
       .onErrorResume(BussinessException.class, this::handleBusinessException)
       .onErrorResume(Exception.class, this::handleGenericException)
       .doOnError(error -> log.error("Error retrieving bootcamps", error));
+  }
+
+  public Mono<ServerResponse> getBootcampById(ServerRequest serverRequest) {
+    String idParam = serverRequest.pathVariable("bootcampId");
+    Long bootcampId;
+    try {
+      bootcampId = Long.parseLong(idParam);
+    } catch (Exception ex) {
+      return ServerResponse.badRequest()
+        .contentType(MediaType.APPLICATION_JSON)
+        .bodyValue(createErrorResponse(VALIDATION_ERROR_TEXT, "bootcampId must be a number"));
+    }
+
+    return getBootcampByIdUseCase.execute(bootcampId)
+      .flatMap(this::buildSuccessResponse)
+      .onErrorResume(DomainException.class, this::handleDomainException)
+      .onErrorResume(BussinessException.class, this::handleBusinessException)
+      .onErrorResume(Exception.class, this::handleGenericException)
+      .doOnError(error -> log.error("Error retrieving bootcamp by id", error));
   }
 
   public Mono<ServerResponse> deleteBootcamp(ServerRequest serverRequest) {

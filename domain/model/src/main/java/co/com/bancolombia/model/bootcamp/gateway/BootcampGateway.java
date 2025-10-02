@@ -11,4 +11,5 @@ public interface BootcampGateway {
   Flux<Bootcamp> findAll();
   Mono<Boolean> existsById(Long id);
   Mono<Void> deleteById(Long id);
+  Mono<Bootcamp> findById(Long id);
 }

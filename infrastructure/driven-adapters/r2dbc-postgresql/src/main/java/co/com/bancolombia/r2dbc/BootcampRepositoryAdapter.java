@@ -70,6 +70,12 @@ public class BootcampRepositoryAdapter implements BootcampGateway {
     return bootcampRepository.deleteById(id);
   }
 
+  @Override
+  public Mono<Bootcamp> findById(Long id) {
+    return bootcampRepository.findById(id)
+      .map(this::toDomain);
+  }
+
   private Bootcamp toDomain(BootcampEntity entity) {
     return new Bootcamp(
       entity.getId(),
