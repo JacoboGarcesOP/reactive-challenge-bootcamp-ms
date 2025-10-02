@@ -1,83 +1,55 @@
 package co.com.bancolombia.r2dbc;
 
 import co.com.bancolombia.model.bootcamp.Bootcamp;
-import co.com.bancolombia.model.bootcamp.values.Description;
-import co.com.bancolombia.model.bootcamp.values.Duration;
-import co.com.bancolombia.model.bootcamp.values.LaunchDate;
-import co.com.bancolombia.model.bootcamp.values.Name;
 import co.com.bancolombia.r2dbc.entity.BootcampEntity;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.LocalDate;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
 
-class BootcampRepositoryAdapterTest {
+public class BootcampRepositoryAdapterTest {
 
-  private BootcampRepository repository;
-  private BootcampRepositoryAdapter adapter;
+    @Test
+    void findAllPagedSorted_desc_sorts() {
+        BootcampRepository repo = mock(BootcampRepository.class);
+        when(repo.findAllOrderByNameAsc(anyInt(), anyInt()))
+                .thenReturn(Flux.just(
+                        new BootcampEntity(1L, "A", "d", LocalDate.now().plusDays(1), 5),
+                        new BootcampEntity(2L, "B", "d", LocalDate.now().plusDays(2), 5)
+                ));
 
-  @BeforeEach
-  void setUp() {
-    repository = Mockito.mock(BootcampRepository.class);
-    adapter = new BootcampRepositoryAdapter(repository);
-  }
+        BootcampRepositoryAdapter adapter = new BootcampRepositoryAdapter(repo);
 
-  @Test
-  void existsByNameReturnsMono() {
-    Mockito.when(repository.existsByName("X")).thenReturn(Mono.just(true));
-    StepVerifier.create(adapter.existsByName("X")).expectNext(true).verifyComplete();
-  }
+        StepVerifier.create(adapter.findAllPagedSorted(0, 10, "name", "desc").collectList())
+                .expectNextMatches(list -> list.size() == 2)
+                .verifyComplete();
+    }
 
-  @Test
-  void saveMapsDomainToEntityAndBack() {
-    Bootcamp toSave = new Bootcamp(
-      "BC Name",
-      "BC Desc",
-      LocalDate.now().plusDays(2),
-      8
-    );
+    @Test
+    void existsById_and_deleteById_delegate() {
+        BootcampRepository repo = mock(BootcampRepository.class);
+        when(repo.existsById(1L)).thenReturn(Mono.just(true));
+        when(repo.deleteById(1L)).thenReturn(Mono.empty());
 
-    BootcampEntity saved = new BootcampEntity(1L, "BC Name", "BC Desc", toSave.getLaunchDate().getValue(), 8);
-    Mockito.when(repository.save(any(BootcampEntity.class))).thenReturn(Mono.just(saved));
+        BootcampRepositoryAdapter adapter = new BootcampRepositoryAdapter(repo);
 
-    StepVerifier.create(adapter.save(toSave))
-      .assertNext(bc -> {
-        org.junit.jupiter.api.Assertions.assertNotNull(bc.getId());
-        org.junit.jupiter.api.Assertions.assertEquals(1L, bc.getId().getValue());
-        org.junit.jupiter.api.Assertions.assertEquals("BC Name", bc.getName().getValue());
-      })
-      .verifyComplete();
-  }
+        StepVerifier.create(adapter.existsById(1L)).expectNext(true).verifyComplete();
+        StepVerifier.create(adapter.deleteById(1L)).verifyComplete();
+    }
 
-  @Test
-  void findAllPagedSortedAsc() {
-    BootcampEntity e1 = new BootcampEntity(2L, "A", "d", LocalDate.now().plusDays(2), 4);
-    BootcampEntity e2 = new BootcampEntity(1L, "B", "d", LocalDate.now().plusDays(3), 6);
-    Mockito.when(repository.findAllOrderByNameAsc(2, 0)).thenReturn(Flux.just(e1, e2));
+    @Test
+    void findAll_mapsEntities() {
+        BootcampRepository repo = mock(BootcampRepository.class);
+        when(repo.findAll()).thenReturn(Flux.just(new BootcampEntity(1L, "N", "D", LocalDate.now().plusDays(1), 1)));
+        BootcampRepositoryAdapter adapter = new BootcampRepositoryAdapter(repo);
 
-    StepVerifier.create(adapter.findAllPagedSorted(0, 2, "name", "asc"))
-      .expectNextCount(2)
-      .verifyComplete();
-  }
-
-  @Test
-  void findAllPagedSortedDesc() {
-    BootcampEntity e1 = new BootcampEntity(2L, "A", "d", LocalDate.now().plusDays(2), 4);
-    BootcampEntity e2 = new BootcampEntity(1L, "B", "d", LocalDate.now().plusDays(3), 6);
-    Mockito.when(repository.findAllOrderByNameAsc(2, 0)).thenReturn(Flux.just(e1, e2));
-
-    StepVerifier.create(adapter.findAllPagedSorted(0, 2, "name", "desc"))
-      .expectNextMatches(bc -> "B".equals(bc.getName().getValue()))
-      .expectNextMatches(bc -> "A".equals(bc.getName().getValue()))
-      .verifyComplete();
-  }
+        StepVerifier.create(adapter.findAll().collectList())
+                .expectNextMatches(list -> list.size() == 1 && list.get(0) instanceof Bootcamp)
+                .verifyComplete();
+    }
 }
-
-

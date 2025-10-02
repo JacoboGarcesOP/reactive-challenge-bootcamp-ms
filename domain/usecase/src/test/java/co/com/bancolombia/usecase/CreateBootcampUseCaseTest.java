@@ -5,6 +5,7 @@ import co.com.bancolombia.model.bootcamp.Capacity;
 import co.com.bancolombia.model.bootcamp.CapacityBootcamp;
 import co.com.bancolombia.model.bootcamp.gateway.BootcampGateway;
 import co.com.bancolombia.model.bootcamp.gateway.CapacityGateway;
+import co.com.bancolombia.model.bootcamp.gateway.PublisherGateway;
 import co.com.bancolombia.model.bootcamp.values.Id;
 import co.com.bancolombia.usecase.command.CreateBootcampCommand;
 import co.com.bancolombia.usecase.exception.BussinessException;
@@ -35,6 +36,9 @@ class CreateBootcampUseCaseTest {
   @Mock
   private CapacityGateway capacityGateway;
 
+  @Mock
+  private PublisherGateway publisherGateway;
+
   @InjectMocks
   private CreateBootcampUseCase useCase;
 
@@ -55,6 +59,7 @@ class CreateBootcampUseCaseTest {
   void shouldCreateBootcampAndAssociateCapacities() {
     when(bootcampGateway.existsByName("Java Bootcamp")).thenReturn(Mono.just(false));
     when(capacityGateway.findAllCapacities()).thenReturn(Flux.just(new Id(1L), new Id(2L), new Id(3L), new Id(4L)));
+    doNothing().when(publisherGateway).publish(any(Bootcamp.class));
 
     Bootcamp saved = new Bootcamp(10L, "Java Bootcamp", "Desc", validCommand.getLaunchDate(), validCommand.getDuration());
     when(bootcampGateway.save(any(Bootcamp.class))).thenReturn(Mono.just(saved));

@@ -5,6 +5,7 @@ import co.com.bancolombia.model.bootcamp.Capacity;
 import co.com.bancolombia.model.bootcamp.CapacityBootcamp;
 import co.com.bancolombia.model.bootcamp.gateway.BootcampGateway;
 import co.com.bancolombia.model.bootcamp.gateway.CapacityGateway;
+import co.com.bancolombia.model.bootcamp.gateway.PublisherGateway;
 import co.com.bancolombia.model.bootcamp.values.Id;
 import co.com.bancolombia.usecase.command.CreateBootcampCommand;
 import co.com.bancolombia.usecase.exception.BussinessException;
@@ -27,10 +28,12 @@ public class CreateBootcampUseCase {
 
   private final BootcampGateway bootcampGateway;
   private final CapacityGateway capacityGateway;
+  private final PublisherGateway publisherGateway;
 
-  public CreateBootcampUseCase(BootcampGateway bootcampGateway, CapacityGateway capacityGateway) {
+  public CreateBootcampUseCase(BootcampGateway bootcampGateway, CapacityGateway capacityGateway, PublisherGateway publisherGateway) {
     this.bootcampGateway = bootcampGateway;
     this.capacityGateway = capacityGateway;
+    this.publisherGateway = publisherGateway;
   }
 
   public Mono<CreateBootcampResponse> execute(CreateBootcampCommand command) {
@@ -63,17 +66,28 @@ public class CreateBootcampUseCase {
               .fromIterable(command.getCapacityIds())
               .flatMap(capacityId -> capacityGateway.associateCapacity(new CapacityBootcamp(bootcamp.getId().getValue(), capacityId)), MAX_CAPACITIES)
               .collectList()
-              .map(capacities -> new CreateBootcampResponse(
-                  bootcamp.getId().getValue(),
-                  bootcamp.getName().getValue(),
-                  bootcamp.getDescription().getValue(),
-                  bootcamp.getLaunchDate().getValue(),
-                  bootcamp.getDuration().getValue(),
-                  capacities
-                    .stream()
-                    .map(this::toCapacityResponse)
-                    .toList()
-                )
+              .map(capacities -> {
+                  publisherGateway.publish(new Bootcamp(
+                    bootcamp.getId().getValue(),
+                    bootcamp.getName().getValue(),
+                    bootcamp.getDescription().getValue(),
+                    bootcamp.getLaunchDate().getValue(),
+                    bootcamp.getDuration().getValue(),
+                    capacities
+                  ));
+
+                  return new CreateBootcampResponse(
+                    bootcamp.getId().getValue(),
+                    bootcamp.getName().getValue(),
+                    bootcamp.getDescription().getValue(),
+                    bootcamp.getLaunchDate().getValue(),
+                    bootcamp.getDuration().getValue(),
+                    capacities
+                      .stream()
+                      .map(this::toCapacityResponse)
+                      .toList()
+                  );
+                }
               )
             )
           );
